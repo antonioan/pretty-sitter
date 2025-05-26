@@ -6,7 +6,7 @@ from tree_sitter import Language, Node, Parser
 from tree_tagger import TreeTagger
 
 from pretty_sitter import PrettySitter
-from pretty_sitter.pretty_sitter import DebugConfig, FilterConfig, MarkingConfig
+from pretty_sitter.configs import DebugConfig, FilterConfig, MarkingConfig
 
 
 language_name = 'python'

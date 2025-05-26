@@ -3,111 +3,14 @@ import os
 import re
 import subprocess
 import sys
-from abc import ABC
-from dataclasses import asdict, dataclass
 from functools import reduce
 from time import sleep
 from typing import Callable, ClassVar, Generator
 
 from tree_sitter import Node
 
-
-color_regex = re.compile(r'\033\[[0-9;]*m')
-
-
-@dataclass
-class Config(ABC):
-    pass
-
-
-@dataclass
-class UIConfig(Config):
-    with_text: bool = True
-    with_trivial: bool = False
-    close_pars_early: bool = True
-    print_with_color: bool = True
-    color_legend: bool = True
-    dotted: bool = False
-    column_width: int = 100
-    indent_size: int = 4
-
-
-@dataclass
-class FilterConfig(Config):
-    excluded_types: list[str] | None = None
-    only_types: list[str] | None = None
-
-
-@dataclass
-class MarkingConfig(Config):
-    definition_nodes: list[Node] | None = None
-    usage_nodes: list[Node] | None = None
-    undefined_usage_nodes: list[Node] | None = None
-
-
-@dataclass
-class TTYConfig(Config):
-    use_pager: bool = False
-
-
-@dataclass
-class DebugConfig(Config):
-    debug: bool = False
-    debug_only: bool = False
-
-
-@dataclass
-class _CombinedConfig(UIConfig, FilterConfig, MarkingConfig, TTYConfig, DebugConfig):
-    pass
-
-
-class Colorer:
-    COLOR_MAP: ClassVar[dict[str, int]] = dict(
-        red=91,
-        green=32,
-        green2=92,
-        yellow=93,
-        blue=94,
-        cyan=96,
-        gray=37,
-    )
-    Brush: ClassVar[type] = Callable[[str], str] | Callable[[str, bool | None], str]
-
-    _boldworthy: Callable[[str], bool]
-
-    def __init__(self, bold: bool | Callable[[str], bool] = False):
-        if isinstance(bold, bool):
-            self._boldworthy = lambda _: bold
-        else:
-            self._boldworthy = bold
-
-    @contextlib.contextmanager
-    def persist(self, *, bold: bool) -> Generator[None, None, None]:
-        old_worthy = self._boldworthy
-        self._boldworthy = lambda _: bold
-        yield
-        self._boldworthy = old_worthy
-
-    def _apply(self, text: str, color: int, *, modifiers=(), bold: bool | None = None) -> str:
-        if bold is None:
-            bold = self._boldworthy(text)
-        if bold:
-            modifiers = (1, 4, *modifiers, color)
-        else:
-            modifiers = (*modifiers, color)
-        return '\033[' + ';'.join(map(str, modifiers)) + 'm' + text + '\033[0m'
-
-    def __getattr__(self, item: str) -> Brush:
-        if item in self.COLOR_MAP:
-            def _brush(text: str, *, bold: bool | None = None) -> str:
-                return self._apply(text, self.COLOR_MAP[item], bold=bold)
-            return _brush
-        raise NotImplementedError(
-            f'color {item} undefined; defined colors are: {tuple(self.COLOR_MAP.keys())}'
-        )
-
-    def by_number(self, number: int, text: str, *, bold: bool | None = None) -> str:
-        return self._apply(text, number * 10, modifiers=(38, 5), bold=bold)
+from pretty_sitter.colorer import Colorer
+from pretty_sitter.configs import Config, _CombinedConfig
 
 
 class PrettySitter:
@@ -132,8 +35,8 @@ class PrettySitter:
         node_text = node_text.replace('\n', r'\n')
         return node_text
 
-    def _trivial(self, n: Node, code: bytes) -> bool:
-        return n.type == self._text(n, code)
+    def _nontrivial(self, n: Node, code: bytes) -> bool:
+        return n.type != self._text(n, code)
 
     def _excluded(self, n: Node) -> bool:
         return self._config.excluded_types is not None and n.type in self._config.excluded_types
@@ -149,38 +52,28 @@ class PrettySitter:
         return not any((
             self._excluded(n),
             not self._included(n),
-            not self._config.with_trivial and self._trivial(n, code),
+            not self._config.with_trivial and not self._nontrivial(n, code),
         ))
 
     def _boldworthy(self, node_type: str) -> bool:
         return self._config.only_types is not None and node_type in self._config.only_types
 
     def _leaf(self, n: Node, code: bytes) -> bool:
-        return len(n.children) == 0 or (not self._config.with_trivial and all(self._trivial(c, code) for c in n.children))
-
-    def _is_definition(self, n: Node) -> bool:
-        return self._config.definition_nodes is not None and n in self._config.definition_nodes
-
-    def _is_usage(self, n: Node) -> bool:
-        return self._config.usage_nodes is not None and n in self._config.usage_nodes
-
-    def _is_undefined_usage(self, n: Node) -> bool:
-        return self._config.undefined_usage_nodes is not None and n in self._config.undefined_usage_nodes
-
-    @staticmethod
-    def _uncolor(text: str):
-        return color_regex.sub('', text)
+        if len(n.children) == 0:
+            return True
+        return not self._config.with_trivial and not any(self._nontrivial(c, code) for c in n.children)
 
     def _column(self, text: str) -> str:
         # Note: we cannot use print(f'{text:<width}') because color codes count as characters
         if self._config.dotted:
-            return text + ' ' + Colorer.gray('.' * (self._config.column_width - len(self._uncolor(text)) + 2)) + ' '
-        return text + ' ' * (self._config.column_width - len(self._uncolor(text)))
+            return text + ' ' + Colorer.gray('.' * (self._config.column_width - len(self._colorer.uncolor(text)) + 2)) + ' '
+        return text + ' ' * (self._config.column_width - len(self._colorer.uncolor(text)))
 
     def _print(self, text: str):
-        if self._config.debug_only and not re.match(rf'^(?:{color_regex.pattern})?DEBUG:', text):
+        uncolored = self._colorer.uncolor(text)
+        if self._config.debug_only and not uncolored.startswith('DEBUG:'):
             return
-        text_to_print = text if self._config.print_with_color else self._uncolor(text)
+        text_to_print = text if self._config.print_with_color else uncolored
         if self._config.use_pager:
             if not hasattr(self._print, 'pager_lines'):
                 self._print.pager_lines = []
@@ -188,23 +81,28 @@ class PrettySitter:
         else:
             print(text_to_print)
 
+    def _find_mark(self, n: Node) -> Colorer.Brush | None:
+        return next((brush for name, brush, nodes in self._config.marks if n in nodes), None)
+
+    def _color_legend(self) -> list[str]:
+        with self._colorer.persist(bold=False):
+            legend = [self._colorer[color](name) for name, color, _ in self._config.marks]
+            legend.append(self._colorer.cyan('Leaves'))
+        return legend
+
     def _obtain_first_color(self, n: Node, code: bytes) -> Colorer.Brush:
-        return (
-            self._colorer.red if self._is_definition(n)
-            else self._colorer.green2 if self._is_usage(n)
-            else self._colorer.yellow if self._is_undefined_usage(n)
-            else self._colorer.blue if not self._trivial(n, code)
-            else self._colorer.gray
-        )
+        if color := self._find_mark(n):
+            return self._colorer[color]
+        if self._nontrivial(n, code):
+            return self._colorer.blue
+        return self._colorer.gray
 
     def _obtain_second_color(self, n: Node, code: bytes) -> Colorer.Brush:
-        return (
-            self._colorer.red if self._is_definition(n)
-            else self._colorer.green2 if self._is_usage(n)
-            else self._colorer.yellow if self._is_undefined_usage(n)
-            else self._colorer.cyan if self._leaf(n, code)
-            else self._colorer.gray
-        )
+        if color := self._find_mark(n):
+            return self._colorer[color]
+        if self._leaf(n, code):
+            return self._colorer.cyan
+        return self._colorer.gray
 
     def _indent(self, depth: int, text: str) -> str:
         indent = ' ' * self._config.indent_size * depth
@@ -284,7 +182,10 @@ class PrettySitter:
         return True
 
     def pprint(self):
-        if self._config.print_with_color and os.environ.get('TERM') not in (terminals := ('xterm-256color', 'screen-256color', 'linux')):
+        if (
+                self._config.print_with_color
+                and os.environ.get('TERM') not in (terminals := ('xterm-256color', 'screen-256color', 'linux'))
+        ):
             print(f'WARNING: color might not appear properly, since env var TERM is not one of: {terminals}',
                   file=sys.stderr)
 
@@ -297,16 +198,7 @@ class PrettySitter:
                   file=sys.stderr)
 
         if self._config.print_with_color and self._config.color_legend:
-            with self._colorer.persist(bold=False):
-                legend = []
-                if self._config.definition_nodes is not None:
-                    legend.append(self._colorer.red('Definitions'))
-                if self._config.usage_nodes is not None:
-                    legend.append(self._colorer.green('Usages'))
-                if self._config.undefined_usage_nodes is not None:
-                    legend.append(self._colorer.yellow('Undefined'))
-                legend.append(self._colorer.cyan('Leaves'))
-                print('Color legend:', ', '.join(legend))
+            print('Color legend:', ', '.join(self._color_legend()))
 
         self._print_node(self._root, self._root.text)
 
