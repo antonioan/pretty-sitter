@@ -3,14 +3,16 @@ import textwrap
 import pytest
 import tree_sitter_python
 from tree_sitter import Language, Node, Parser
+from tree_tagger import TreeTagger
 
 from pretty_sitter import PrettySitter
-from pretty_sitter.pretty_sitter import Config, FilterConfig
+from pretty_sitter.pretty_sitter import DebugConfig, FilterConfig, MarkingConfig
 
 
-@pytest.fixture(scope='session')
-def parser() -> Parser:
-    return Parser(Language(tree_sitter_python.language()))
+language_name = 'python'
+language = Language(tree_sitter_python.language())
+parser = Parser(language)
+tree_tagger = TreeTagger(language, language_name)
 
 
 @pytest.fixture
@@ -26,22 +28,24 @@ def code() -> str:
 
 
 @pytest.fixture
-def node(code: str, parser: Parser) -> Node:
+def root(code: str) -> Node:
     return parser.parse(bytes(code, 'utf8')).root_node
 
 
-@pytest.fixture
-def configs() -> list[Config]:
-    return [
+def test_pprint(root: Node):
+    tags = tree_tagger.tag(root, find_usage_definitions=True)
+    configs = [
         FilterConfig(only_types=['identifier']),
+        MarkingConfig(
+            definition_nodes=tags.definition_nodes,
+            usage_nodes=tags.defined_usage_nodes,
+            undefined_usage_nodes=tags.undefined_usage_nodes,
+        ),
+        DebugConfig(
+            debug=True,
+            debug_only=True,
+        ),
     ]
-
-
-@pytest.fixture
-def pretty_sitter(node: Node, configs: list[Config]) -> PrettySitter:
-    return PrettySitter(node, *configs)
-
-
-def test_pprint(pretty_sitter: PrettySitter):
+    pretty_sitter = PrettySitter(root, *configs)
     print()
     pretty_sitter.pprint()

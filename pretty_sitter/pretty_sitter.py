@@ -13,14 +13,11 @@ from tree_sitter import Node
 
 
 color_regex = re.compile(r'\033\[[0-9;]*m')
-py_debugging = (gettrace := getattr(sys, 'gettrace')) and gettrace()  # todo: check dynamically
 
 
 @dataclass
 class Config(ABC):
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+    pass
 
 
 @dataclass
@@ -56,7 +53,6 @@ class TTYConfig(Config):
 @dataclass
 class DebugConfig(Config):
     debug: bool = False
-    breakpoint_on_line: int | None = None
     debug_only: bool = False
 
 
@@ -127,17 +123,8 @@ class PrettySitter:
         self._colorer = Colorer(self._boldworthy)
 
     def configure(self, *configs: Config):
-        combined_dict = reduce(dict.__or__, [asdict(c) for c in configs], asdict(self._config))
+        combined_dict = reduce(dict.__or__, [c.__dict__ for c in configs], self._config.__dict__)
         self._config = _CombinedConfig(**combined_dict)
-
-    def _nullify_breakpoint_when_no_debug(self):
-        if self._config.breakpoint_on_line:
-            if not py_debugging:
-                print('INFO: python was not run in debug mode, so `breakpoint_on_line` will be ignored')
-                self._config.breakpoint_on_line = None
-            elif not self._config.debug:
-                print('INFO: `debug` was not set to True, so `breakpoint_on_line` will be ignored')
-                self._config.breakpoint_on_line = None
 
     @staticmethod
     def _text(n: Node, code: bytes) -> str:
@@ -230,13 +217,18 @@ class PrettySitter:
         node_line = n.start_point[0]
         node_name = node_type if n.is_named else '"' + node_type.replace('"', r'\"') + '"'
 
-        if self._config.breakpoint_on_line == node_line:
-            breakpoint()
-
         if not self._printworthy(n, code):
             if self._config.debug:
-                self._print(self._colorer.gray(f"DEBUG: skipped {self._print_node.__name__} with node_name=") + node_name
-                            + self._colorer.gray(f", {depth=}, end='") + end + self._colorer.gray("'"))
+                text_quoted = node_text.replace("'", r"\'")
+                text_truncated = text_quoted[:12] + '...' if len(text_quoted) > 15 else text_quoted
+                self._print(
+                    self._colorer.gray(f"DEBUG: 🔴 skipped node_name=")
+                    + node_name
+                    + self._colorer.gray(f", text='{text_truncated}'")
+                    + self._colorer.gray(f", {depth=}, end='")
+                    + end
+                    + self._colorer.gray("'")
+                )
             return False
 
         first_color = self._obtain_first_color(n, code)
@@ -246,8 +238,16 @@ class PrettySitter:
         node_text_colored = second_color(node_text)
 
         if self._config.debug:
-            self._print(self._colorer.gray(f"DEBUG: entered {self._print_node.__name__} with node_name=") + node_name_colored
-                        + self._colorer.gray(f", {depth=}, end='") + end + self._colorer.gray("'"))
+            text_quoted = node_text.replace("'", r"\'")
+            text_truncated = text_quoted[:12] + '...' if len(text_quoted) > 15 else text_quoted
+            self._print(
+                self._colorer.gray(f"DEBUG: 🟢 entered node_name=")
+                + node_name_colored
+                + self._colorer.gray(f", text='{text_truncated}'")
+                + self._colorer.gray(f", {depth=}, end='")
+                + end
+                + self._colorer.gray("'")
+            )
 
         open_par = self._colorer.by_number(depth, '(')
         closed_par = self._colorer.by_number(depth, ')')
@@ -284,8 +284,6 @@ class PrettySitter:
         return True
 
     def pprint(self):
-        self._nullify_breakpoint_when_no_debug()
-
         if self._config.print_with_color and os.environ.get('TERM') not in (terminals := ('xterm-256color', 'screen-256color', 'linux')):
             print(f'WARNING: color might not appear properly, since env var TERM is not one of: {terminals}',
                   file=sys.stderr)
@@ -300,13 +298,15 @@ class PrettySitter:
 
         if self._config.print_with_color and self._config.color_legend:
             with self._colorer.persist(bold=False):
-                legend = (
-                    self._colorer.red('Definitions'),
-                    self._colorer.green('Usages'),
-                    self._colorer.yellow('Undefined'),
-                    self._colorer.cyan('Leaves'),
-                )
-                print(', '.join(legend))
+                legend = []
+                if self._config.definition_nodes is not None:
+                    legend.append(self._colorer.red('Definitions'))
+                if self._config.usage_nodes is not None:
+                    legend.append(self._colorer.green('Usages'))
+                if self._config.undefined_usage_nodes is not None:
+                    legend.append(self._colorer.yellow('Undefined'))
+                legend.append(self._colorer.cyan('Leaves'))
+                print('Color legend:', ', '.join(legend))
 
         self._print_node(self._root, self._root.text)
 

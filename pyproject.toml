@@ -1,0 +1,98 @@
+[project]
+name = "pretty-sitter"
+version = "0.0.1"
+description = "Pretty printer for tree-sitter"
+authors = [{ name = "Antonio Abu Nassar", email = "antonioabunassar@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "tree-sitter"
+]
+
+[project.optional-dependencies]
+dev = [
+    "tree-sitter-python @ git+https://github.com/tree-sitter/tree-sitter-python.git",
+    "tree-tagger @ git+https://github.com/antonioan/tree-tagger.git",
+    "pytest",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/antonioan/pretty-sitter"
+"Bug Tracker" = "https://github.ibm.com/antonioan/pretty-sitter"
+
+[tool.setuptools.packages.find]
+include = ["pretty_sitter"]
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Tool configs
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+ignore = [
+    "E501"  # line too long
+]
+
+[tool.pylint.main]
+disable = [
+    # Warnings
+    "logging-not-lazy",
+    "fixme",
+    "unused-argument",
+    "protected-access",
+    "abstract-method",
+    # Conventions
+    "useless-import-alias",
+    "import-outside-toplevel",
+    "invalid-name",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    # Refactors
+    "cyclic-import",
+    "duplicate-code"
+]
+load-plugins = [
+    "pylint.extensions.docparams",
+    "pylint.extensions.bad_builtin"
+]
+
+[tool.bandit]
+exclude_dirs = [
+    "build"
+]
+skips = [
+    "B101", # assert
+    "B404" # subprocess
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+
+[tool.pyright]
+include=[
+    "pretty_sitter"
+]
+
+#[tool.pytest.ini_options]
+#minversion = "6.0"
+#testpaths = ["test"]
