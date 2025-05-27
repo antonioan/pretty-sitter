@@ -4,7 +4,7 @@ version = "0.0.1"
 description = "Pretty printer for tree-sitter"
 authors = [{ name = "Antonio Abu Nassar", email = "antonioabunassar@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "tree-sitter"
 ]
@@ -30,7 +30,7 @@ build-backend = "setuptools.build_meta"
 # Tool configs
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]

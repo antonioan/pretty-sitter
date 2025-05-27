@@ -1,16 +1,15 @@
 import contextlib
 import os
-import re
 import subprocess
 import sys
 from functools import reduce
 from time import sleep
-from typing import Callable, ClassVar, Generator
+from typing import Generator
 
 from tree_sitter import Node
 
 from pretty_sitter.colorer import Colorer
-from pretty_sitter.configs import Config, _CombinedConfig
+from pretty_sitter.config import Config, _CombinedConfig
 
 
 class PrettySitter:
