@@ -2,6 +2,8 @@
 
 Pretty printer for tree-sitter
 
+![assets/example-output.png](assets/example-output.png)
+
 ## Usage
 
 ```python
