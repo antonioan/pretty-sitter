@@ -1,7 +1,27 @@
-# Config API
+# Configuration API
 
-*This page will be implemented in a future task.*
+The configuration system provides flexible control over pretty printing behavior through various configuration classes.
 
-## Coming Soon
+## Base Configuration Class
 
-Configuration classes documentation will be added here.
+::: pretty_sitter.config.Config
+
+## UI Configuration
+
+::: pretty_sitter.config.UIConfig
+
+## Filter Configuration
+
+::: pretty_sitter.config.FilterConfig
+
+## Marking Configuration
+
+::: pretty_sitter.config.MarkingConfig
+
+## TTY Configuration
+
+::: pretty_sitter.config.TTYConfig
+
+## Debug Configuration
+
+::: pretty_sitter.config.DebugConfig

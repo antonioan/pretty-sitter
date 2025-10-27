@@ -1,7 +1,5 @@
 # PrettySitter API
 
-*This page will be implemented in a future task.*
+The PrettySitter class is the main interface for pretty printing tree-sitter parse trees with configurable formatting and coloring.
 
-## Coming Soon
-
-PrettySitter class documentation will be added here.
+::: pretty_sitter.pretty_sitter.PrettySitter

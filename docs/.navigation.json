@@ -1,0 +1,74 @@
+{
+  "sections": [
+    {
+      "title": "Getting Started",
+      "description": "Quick start guides and installation instructions",
+      "pages": [
+        "installation",
+        "quick-start",
+        "basic-examples"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "title": "User Guides",
+      "description": "Comprehensive guides for effective usage",
+      "pages": [
+        "configuration-guide",
+        "advanced-usage",
+        "integration-examples"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "title": "API Reference",
+      "description": "Complete API documentation and reference",
+      "pages": [
+        "pretty-sitter",
+        "colorer",
+        "config",
+        "configuration-options"
+      ],
+      "difficulty": "reference"
+    },
+    {
+      "title": "Troubleshooting",
+      "description": "Solutions to common problems and issues",
+      "pages": [
+        "common-issues",
+        "faq",
+        "bug-reporting"
+      ],
+      "difficulty": "support"
+    },
+    {
+      "title": "Contributing",
+      "description": "Guidelines for contributing to the project",
+      "pages": [
+        "development-setup",
+        "coding-standards",
+        "architecture",
+        "pull-request-guidelines"
+      ],
+      "difficulty": "advanced"
+    }
+  ],
+  "cross_references": {
+    "installation": [
+      "quick-start",
+      "troubleshooting"
+    ],
+    "configuration-guide": [
+      "api-reference",
+      "advanced-usage"
+    ],
+    "troubleshooting": [
+      "installation",
+      "faq"
+    ],
+    "contributing": [
+      "development-setup",
+      "coding-standards"
+    ]
+  }
+}

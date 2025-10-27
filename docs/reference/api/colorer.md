@@ -1,7 +1,5 @@
 # Colorer API
 
-*This page will be implemented in a future task.*
+The Colorer class provides a color management system for applying ANSI color codes to text strings with flexible formatting options.
 
-## Coming Soon
-
-Colorer class documentation will be added here.
+::: pretty_sitter.colorer.Colorer

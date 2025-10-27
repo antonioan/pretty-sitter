@@ -1,0 +1,62 @@
+{
+  "pretty-sitter": [
+    "pretty",
+    "sitter",
+    "tree-sitter",
+    "parser",
+    "syntax",
+    "tree",
+    "ast"
+  ],
+  "configuration": [
+    "config",
+    "settings",
+    "options",
+    "customize",
+    "theme",
+    "color"
+  ],
+  "colorer": [
+    "color",
+    "highlight",
+    "syntax",
+    "theme",
+    "brush",
+    "ansi"
+  ],
+  "installation": [
+    "install",
+    "setup",
+    "pip",
+    "python",
+    "dependencies"
+  ],
+  "examples": [
+    "example",
+    "tutorial",
+    "demo",
+    "usage",
+    "how-to"
+  ],
+  "troubleshooting": [
+    "error",
+    "issue",
+    "problem",
+    "debug",
+    "fix",
+    "help"
+  ],
+  "api": [
+    "reference",
+    "documentation",
+    "method",
+    "class",
+    "function"
+  ],
+  "contributing": [
+    "contribute",
+    "development",
+    "pull-request",
+    "github"
+  ]
+}

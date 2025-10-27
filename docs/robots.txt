@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://antonioan.github.io/pretty-sitter/sitemap.xml

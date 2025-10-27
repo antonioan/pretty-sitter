@@ -1,0 +1,34 @@
+# Pre-commit hooks for documentation quality assurance
+repos:
+  - repo: local
+    hooks:
+      - id: validate-code-examples
+        name: Validate documentation code examples
+        entry: python scripts/validate-code-examples.py
+        language: system
+        files: ^docs/.*\.md$
+        args: [--fail-on-error]
+        pass_filenames: false
+      
+      - id: validate-docs-structure
+        name: Validate documentation structure
+        entry: python scripts/validate-docs.py
+        language: system
+        files: ^(docs/.*\.md|mkdocs\.yml)$
+        pass_filenames: false
+  
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        name: Lint markdown files
+        files: ^docs/.*\.md$
+        args: [--config, .markdownlint.json]
+  
+  - repo: https://github.com/streetsidesoftware/cspell-cli
+    rev: v7.3.8
+    hooks:
+      - id: cspell
+        name: Spell check documentation
+        files: ^docs/.*\.md$
+        args: [--config, .cspell.json]

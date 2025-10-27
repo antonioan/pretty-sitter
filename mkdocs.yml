@@ -28,36 +28,52 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.tracking
+    - navigation.path
+    - navigation.indexes
     - search.highlight
     - search.share
+    - search.suggest
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+    - toc.integrate
 
 nav:
   - Home: index.md
   - Getting Started:
+    - getting-started/index.md
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quick-start.md
     - Basic Examples: getting-started/basic-examples.md
   - User Guides:
+    - guides/index.md
     - Configuration Guide: guides/configuration-guide.md
     - Advanced Usage: guides/advanced-usage.md
     - Integration Examples: guides/integration-examples.md
   - API Reference:
+    - reference/index.md
     - PrettySitter: reference/api/pretty-sitter.md
     - Colorer: reference/api/colorer.md
     - Config: reference/api/config.md
     - Configuration Options: reference/configuration-options.md
   - Troubleshooting:
+    - troubleshooting/index.md
     - Common Issues: troubleshooting/common-issues.md
     - FAQ: troubleshooting/faq.md
+    - Bug Reporting: troubleshooting/bug-reporting.md
   - Contributing:
+    - contributing/index.md
     - Development Setup: contributing/development-setup.md
     - Coding Standards: contributing/coding-standards.md
     - Architecture: contributing/architecture.md
+    - Pull Request Guidelines: contributing/pull-request-guidelines.md
 
 plugins:
-  - search
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+      lang: en
   - mkdocstrings:
       handlers:
         python:
@@ -70,23 +86,42 @@ plugins:
             separate_signature: true
             show_signature_annotations: true
             signature_crossrefs: true
+            members_order: source
+            group_by_category: true
+            show_category_heading: true
 
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      check_paths: true
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - attr_list
   - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - abbr
   - toc:
       permalink: true
+      toc_depth: 3
 
 extra:
   social:
@@ -94,3 +129,18 @@ extra:
       link: https://github.com/antonioan/pretty-sitter
   version:
     provider: mike
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: >- 
+            Thanks for your feedback! Help us improve this page by
+            <a href="https://github.com/antonioan/pretty-sitter/issues/new/?title=[Docs]%20{title}%20-%20{url}" target="_blank" rel="noopener">telling us what you found lacking</a>.
