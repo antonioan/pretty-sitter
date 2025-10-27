@@ -1,3 +1,1 @@
-from .pretty_sitter import (
-    PrettySitter as PrettySitter
-)
+from .pretty_sitter import PrettySitter as PrettySitter

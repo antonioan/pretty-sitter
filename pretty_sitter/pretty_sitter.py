@@ -166,7 +166,7 @@ class PrettySitter:
         else:
             print(text_to_print)
 
-    def _find_mark(self, n: Node) -> str | None:
+    def _find_mark(self, n: Node) -> Colorer.Brush | None:
         """Find the color name for a marked node, if any."""
         return next((brush for name, brush, nodes in self._config.marks if n in nodes), None)
 
@@ -177,7 +177,7 @@ class PrettySitter:
             legend.append(self._colorer.cyan("Leaves"))
         return legend
 
-    def _obtain_first_color(self, n: Node) -> "Colorer.Brush":
+    def _obtain_first_color(self, n: Node) -> Colorer.Brush:
         """Get the color brush for the node type display."""
         if color := self._find_mark(n):
             return self._colorer[color]
@@ -185,7 +185,7 @@ class PrettySitter:
             return self._colorer.blue
         return self._colorer.gray
 
-    def _obtain_second_color(self, n: Node) -> "Colorer.Brush":
+    def _obtain_second_color(self, n: Node) -> Colorer.Brush:
         """Get the color brush for the node text display."""
         if color := self._find_mark(n):
             return self._colorer[color]

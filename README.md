@@ -1,81 +1,210 @@
 # pretty-sitter
 
-Pretty printer for tree-sitter
+[![PyPI version](https://badge.fury.io/py/pretty-sitter.svg)](https://badge.fury.io/py/pretty-sitter)
+[![Python Support](https://img.shields.io/pypi/pyversions/pretty-sitter.svg)](https://pypi.org/project/pretty-sitter/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/antonioan/pretty-sitter/workflows/CI/badge.svg)](https://github.com/antonioan/pretty-sitter/actions)
+[![Documentation Status](https://readthedocs.org/projects/pretty-sitter/badge/?version=latest)](https://pretty-sitter.readthedocs.io/en/latest/?badge=latest)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-![assets/example-output.png](assets/example-output.png)
+A powerful and flexible pretty printer for [tree-sitter](https://tree-sitter.github.io/tree-sitter/) parse trees with rich formatting, filtering, and visualization capabilities.
 
-## Usage
+## Overview
 
-```python
-from pretty_sitter import PrettySitter
-from tree_sitter import Node
+pretty-sitter transforms tree-sitter parse trees into beautifully formatted, colorized output that makes it easy to understand and analyze code structure. Whether you're debugging parsers, exploring ASTs, or building developer tools, pretty-sitter provides the visualization you need.
 
-root: Node = ...  # obtain a `root` node from tree-sitter
+## Key Features
 
-PrettySitter().pprint(root)
+### 🎨 **Rich Visual Output**
+
+- **Colorized syntax highlighting** with customizable color schemes
+- **Configurable indentation** and formatting options
+- **Column-aligned display** with optional dotted guides
+- **Bold highlighting** for important node types
+
+### 🔍 **Powerful Filtering**
+
+- **Include/exclude node types** to focus on what matters
+- **Hide trivial nodes** (where type equals text content)
+- **Smart filtering** that preserves tree structure
+
+### 🏷️ **Semantic Marking**
+
+- **Highlight specific nodes** with custom colors and labels
+- **Built-in support** for definitions, usages, and undefined references
+- **Flexible marking system** for custom analysis workflows
+
+### ⚙️ **Flexible Configuration**
+
+- **Modular configuration system** with composable config objects
+- **Context managers** for temporary configuration changes
+- **Runtime reconfiguration** without recreating instances
+
+### 🖥️ **Terminal Integration**
+
+- **Automatic color detection** with terminal compatibility warnings
+- **Pager support** for large parse trees (integrates with `less`)
+- **TTY-aware output** with appropriate formatting
+
+### 🐛 **Developer-Friendly**
+
+- **Debug mode** with detailed processing information
+- **Type hints** throughout the codebase
+- **Comprehensive documentation** and examples
+
+## Use Cases
+
+- **Parser Development**: Visualize and debug tree-sitter grammars
+- **Code Analysis**: Explore AST structure for static analysis tools
+- **Educational Tools**: Teach programming language concepts through visual ASTs
+- **IDE Features**: Build syntax highlighting and code navigation features
+- **Research**: Analyze code patterns and language structures
+
+## Quick Start
+
+### Installation
+
+Install pretty-sitter using pip:
+
+```bash
+pip install pretty-sitter
 ```
 
-You can also use some configurations from [pretty_sitter/config.py](pretty_sitter/config.py),
-both during initialization of the `PrettySitter` and for a specific run of `pprint`.
-Here is an example showcasing both:
+For development or to access the latest features:
+
+```bash
+pip install git+https://github.com/antonioan/pretty-sitter.git
+```
+
+### Basic Usage
 
 ```python
 from pretty_sitter import PrettySitter
-from pretty_sitter.config import FilterConfig, UIConfig
-from tree_sitter import Node
+from tree_sitter import Language, Parser
 
-root: Node = ...  # obtain a `root` node from tree-sitter
+# Set up tree-sitter (example with Python)
+language = Language(library_path, 'python')
+parser = Parser()
+parser.set_language(language)
 
-PrettySitter(
-    FilterConfig(only_types=['identifier'])
-).pprint(
-    root,
-    UIConfig(
-        with_trivial=True,  # those whose type is equal to their actual content, e.g. '(', ':', 'pass'
-        column_width=90,
+# Parse some code
+code = b'''
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+'''
+tree = parser.parse(code)
+
+# Pretty print the parse tree
+ps = PrettySitter()
+ps.pprint(tree.root_node)
+```
+
+This will output a beautifully formatted, colorized representation of your parse tree:
+
+```
+(module
+    (function_definition
+        name: (identifier)                                                                    2: fibonacci
+        parameters: (parameters
+            (identifier)                                                                      2: n
+        )
+        body: (block
+            (if_statement
+                condition: (comparison_operator
+                    (identifier)                                                              3: n
+                    (integer)                                                                 3: 1
+                )
+                consequence: (block
+                    (return_statement
+                        (identifier)                                                          4: n
+                    )
+                )
+            )
+            (return_statement
+                (binary_operator
+                    left: (call
+                        function: (identifier)                                                6: fibonacci
+                        arguments: (argument_list
+                            (binary_operator
+                                left: (identifier)                                            6: n
+                                right: (integer)                                              6: 1
+                            )
+                        )
+                    )
+                    right: (call
+                        function: (identifier)                                                6: fibonacci
+                        arguments: (argument_list
+                            (binary_operator
+                                left: (identifier)                                            6: n
+                                right: (integer)                                              6: 2
+                            )
+                        )
+                    )
+                )
+            )
+        )
     )
 )
 ```
 
-## Example
+### Configuration Examples
 
-Here is a fully working example (taken from [tests/test_pretty_sitter.py](tests/test_pretty_sitter.py) with adaptations):
+Focus on specific node types:
 
 ```python
-import tree_sitter_python
-from pretty_sitter import PrettySitter
 from pretty_sitter.config import FilterConfig
-from tree_sitter import Language, Parser
 
-parser = Parser(language := Language(tree_sitter_python.language()))
-
-code = '''
-import os
-from pathlib import Path
-
-def print_hello(name: str) -> None:
-    print(f'Hello, {name}!')
-    print(f'We are currently in {str(Path(os.getcwd()))}')
-'''.lstrip()
-
-root = parser.parse(bytes(code, 'utf8')).root_node
-pretty_sitter = PrettySitter(
-    FilterConfig(only_types=['identifier'])
-)
-pretty_sitter.pprint(root)
+# Show only function definitions and calls
+ps.pprint(tree.root_node, FilterConfig(
+    only_types=['function_definition', 'call']
+))
 ```
 
-Output:
+Customize the visual appearance:
 
-![assets/example-output.png](assets/example-output.png)
+```python
+from pretty_sitter.config import UIConfig
 
-## Teaser: Integration with tree-tagger (coming soon!)
+# Compact output without text content
+ps.pprint(tree.root_node, UIConfig(
+    with_text=False,
+    indent_size=2,
+    print_with_color=False
+))
+```
 
-**tree-tagger** is another useful turbo package for tree-sitter, which enables you to extract identifiers
-from the code such as functions, classes and variables, separating between identifier definitions and usages.
-It is coming very soon to GitHub, including support for several programming languages. Stay tuned!
+## Documentation
 
-Here is how the output should appear when we use tree-tagger
-along with pretty-sitter's [MarkingConfig](pretty_sitter/config.py?plain=1#L34):
+- **[Installation Guide](docs/getting-started/installation.md)** - Detailed setup instructions
+- **[Quick Start Tutorial](docs/getting-started/quick-start.md)** - 5-minute getting started guide
+- **[Configuration Guide](docs/guides/configuration-guide.md)** - Complete configuration reference
+- **[API Reference](docs/reference/api/)** - Detailed API documentation
+- **[Examples](docs/getting-started/basic-examples.md)** - Common usage patterns
+- **[Advanced Usage](docs/guides/advanced-usage.md)** - Complex scenarios and best practices
 
-![assets/example-output-with-tags.png](assets/example-output-with-tags.png)
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](docs/contributing/development-setup.md) for details on:
+
+- Setting up your development environment
+- Running tests and linting
+- Submitting pull requests
+- Coding standards and guidelines
+
+## Support
+
+- **[Documentation](https://pretty-sitter.readthedocs.io/)** - Complete documentation
+- **[Issues](https://github.com/antonioan/pretty-sitter/issues)** - Bug reports and feature requests
+- **[Discussions](https://github.com/antonioan/pretty-sitter/discussions)** - Questions and community support
+- **[Changelog](CHANGELOG.md)** - Release notes and version history
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built on top of the excellent [tree-sitter](https://tree-sitter.github.io/tree-sitter/) parsing library
+- Inspired by the need for better AST visualization tools in the developer ecosystem
